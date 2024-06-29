@@ -25,27 +25,24 @@ jobs:
           nim c generate.nim
           ./generate
 
-          if [ `stat -c %s tzdata.json` -lt 2000000 ]; then
-            echo "tzdata.json is less than 2mb"
+          if [ `stat -c %s tzdata.json` -lt 1000000 ]; then
+            echo "tzdata.json is less than 1mb. This is unexpecetd as it's normally around one floppy disk in length. Please check."
             exit 1
           fi
   
       - name: Commit if changed
         run: |
           mv ./tzdata.json ../dist/tzdata-all.json
+          cd ..
           if [[ `git status --porcelain` ]]; then
-            echo "Changes detected in the repository after running visual regression tests."
-            echo "Run the following locally to fix:"
-            echo "- cd tools"
-            echo "- num r generate.nim"
+            echo "Changes detected in the repository. Committing."
             git status
-            git diff
-            echo "changes_detected=true" >> $GITHUB_ENV
+            git add dist/tzdata-all.json
+            git config --local user.email "tz@frameos.net"
+            git config --local user.name "Timezone Bot"
+            git commit -m "Update tzdata-all.json"
+            git push
+            echo "Changes committed."
           else
             echo "No changes detected in the repository."
-            echo "changes_detected=false" >> $GITHUB_ENV
           fi
-
-      - name: Fail if changes detected
-        if: env.changes_detected == 'true'
-        run: exit 1
