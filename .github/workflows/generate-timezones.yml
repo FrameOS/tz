@@ -21,6 +21,7 @@ jobs:
       - name: Generate timezones
         run: |
           cd tools
+          nimble install chrono
           nim c generate.nim
           ./generate
   
