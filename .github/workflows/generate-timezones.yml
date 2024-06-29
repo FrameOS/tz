@@ -32,8 +32,7 @@ jobs:
   
       - name: Commit if changed
         run: |
-          mv ./tzdata.json ../dist/tzdata-all.json
-          cd ..
+          mv tools/tzdata.json dist/tzdata-all.json
           if [[ `git status --porcelain` ]]; then
             echo "Changes detected in the repository. Committing."
             git status
