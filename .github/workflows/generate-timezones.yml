@@ -30,9 +30,8 @@ jobs:
           if [[ `git status --porcelain` ]]; then
             echo "Changes detected in the repository after running visual regression tests."
             echo "Run the following locally to fix:"
-            echo "- cd e2e"
-            echo "- source ../backend/.venv/bin/activate"
-            echo "- make"
+            echo "- cd tools"
+            echo "- num r generate.nim"
             git status
             git diff
             echo "changes_detected=true" >> $GITHUB_ENV
