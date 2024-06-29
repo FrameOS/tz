@@ -33,6 +33,7 @@ jobs:
       - name: Commit if changed
         run: |
           rm init.sh
+          git checkout main
           mv tools/tzdata.json dist/tzdata.json
           mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
           mv tools/tzdata/timezones.csv dist/timezones.csv
@@ -43,7 +44,7 @@ jobs:
             git config --local user.email "tz@frameos.net"
             git config --local user.name "Timezone Bot"
             git commit -m "Update tzdata.json"
-            git push
+            git push origin main
             echo "Changes committed."
           else
             echo "No changes detected in the repository."
