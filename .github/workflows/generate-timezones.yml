@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - '**'
-  # schedule:
-  #   - cron: '0 0 * * *'
-
+  schedule:
+    - cron: '42 0 * * *'
+permissions:
+  contents: write
+  
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -21,26 +23,26 @@ jobs:
       - name: Generate timezones
         run: |
           cd tools
+          nimble install chrono
           nim c generate.nim
           ./generate
+
+          if [ `stat -c %s tzdata.json` -lt 1000000 ]; then
+            echo "tzdata.json is less than 1mb. This is unexpecetd as it's normally around one floppy disk in length. Please check."
+            exit 1
+          fi
   
-      - name: Check for snapshot modifications
+      - name: Commit if changed
         run: |
           rm init.sh
+          mv tools/tzdata.json dist/tzdata.json
+          mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
+          mv tools/tzdata/timezones.csv dist/timezones.csv
           if [[ `git status --porcelain` ]]; then
-            echo "Changes detected in the repository after running visual regression tests."
-            echo "Run the following locally to fix:"
-            echo "- cd e2e"
-            echo "- source ../backend/.venv/bin/activate"
-            echo "- make"
+            echo "Changes detected in the repository."
             git status
-            git diff
-            echo "changes_detected=true" >> $GITHUB_ENV
+            echo "TODO"
+            exit 1
           else
             echo "No changes detected in the repository."
-            echo "changes_detected=false" >> $GITHUB_ENV
           fi
-
-      - name: Fail if changes detected
-        if: env.changes_detected == 'true'
-        run: exit 1

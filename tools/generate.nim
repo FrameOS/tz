@@ -76,6 +76,8 @@ proc fetchAndCompileTzDb() =
   runCommand("cd tz; zic -d zic_out " & timeZoneFiles.join(" "))
 
 proc dumpToCsvFiles() =
+  if not dirExists("tzdata"):
+    createDir("tzdata")
   let timezones = open("tzdata/timezones.csv", fmWrite)
   let dstChanges = open("tzdata/dstchanges.csv", fmWrite)
 
