@@ -23,12 +23,16 @@ jobs:
           cd tools
           nimble install chrono
           nim c generate.nim
-          mkdir tzdata
           ./generate
+
+          if [ `stat -c %s tzdata.json` -lt 2000000 ]; then
+            echo "tzdata.json is less than 2mb"
+            exit 1
+          fi
   
-      - name: Check for snapshot modifications
+      - name: Commit if changed
         run: |
-          rm init.sh
+          mv ./tzdata.json ../dist/tzdata-all.json
           if [[ `git status --porcelain` ]]; then
             echo "Changes detected in the repository after running visual regression tests."
             echo "Run the following locally to fix:"
