@@ -1,4 +1,4 @@
-name: Build timeszones
+name: Generate Time Zones
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate timezones
+      - name: Generate time zones
         run: |
           cd tools
           nimble install chrono
@@ -29,29 +29,15 @@ jobs:
           ./generate
 
           if [ `stat -c %s tzdata.json` -lt 1000000 ]; then
-            echo "tzdata.json is less than 1mb. This is unexpecetd as it's normally around one floppy disk in length. Please check."
+            echo "tzdata.json is less than 1mb. This is unexpecetd as it's normally around one floppy disk. Please check."
             exit 1
           fi
-          mv tools/tzdata.json dist/tzdata.json
-          mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
-          mv tools/tzdata/timezones.csv dist/timezones.csv
+          
+          mv ./tzdata.json ../dist/tzdata.json
+          mv ./tzdata/dstchanges.csv ../dist/dstchanges.csv
+          mv ./tzdata/timezones.csv ../dist/timezones.csv
   
-      # - name: Commit if changed
-      #   run: |
-      #     # rm init.sh
-      #     mv tools/tzdata.json dist/tzdata.json
-      #     mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
-      #     mv tools/tzdata/timezones.csv dist/timezones.csv
-      #     if [[ `git status --porcelain` ]]; then
-      #       echo "Changes detected in the repository."
-      #       # git status
-      #       # echo "TODO"
-      #       # exit 1
-      #     else
-      #       echo "No changes detected in the repository."
-      #     fi
-
-      - name: Commit updated timezones
+      - name: Commit updated time zones
         uses: EndBug/add-and-commit@v9
         id: commit
         with:
