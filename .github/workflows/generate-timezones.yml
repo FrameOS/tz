@@ -32,29 +32,32 @@ jobs:
             echo "tzdata.json is less than 1mb. This is unexpecetd as it's normally around one floppy disk in length. Please check."
             exit 1
           fi
-  
-      - name: Commit if changed
-        run: |
-          rm init.sh
           mv tools/tzdata.json dist/tzdata.json
           mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
           mv tools/tzdata/timezones.csv dist/timezones.csv
-          if [[ `git status --porcelain` ]]; then
-            echo "Changes detected in the repository."
-            git status
-            echo "TODO"
-            exit 1
-          else
-            echo "No changes detected in the repository."
-          fi
+  
+      # - name: Commit if changed
+      #   run: |
+      #     # rm init.sh
+      #     mv tools/tzdata.json dist/tzdata.json
+      #     mv tools/tzdata/dstchanges.csv dist/dstchanges.csv
+      #     mv tools/tzdata/timezones.csv dist/timezones.csv
+      #     if [[ `git status --porcelain` ]]; then
+      #       echo "Changes detected in the repository."
+      #       # git status
+      #       # echo "TODO"
+      #       # exit 1
+      #     else
+      #       echo "No changes detected in the repository."
+      #     fi
 
-      - name: Commit updated snapshots
+      - name: Commit updated timezones
         uses: EndBug/add-and-commit@v9
         id: commit
         with:
             add: 'dist/*'
             author_name: FrameOS Bot
-            author_email: gitbot@frameos.net
+            author_email: git@frameos.net
             message: 'Update timezones'
             pull: --rebase --autostash
             default_author: github_actions
