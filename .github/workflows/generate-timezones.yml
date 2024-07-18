@@ -36,6 +36,10 @@ jobs:
           mv ./tzdata.json ../dist/tzdata.json
           mv ./tzdata/dstchanges.csv ../dist/dstchanges.csv
           mv ./tzdata/timezones.csv ../dist/timezones.csv
+          cd ../dist
+          gzip -9 -k tzdata.json
+          gzip -9 -k dstchanges.csv
+          gzip -9 -k timezones.csv
   
       - name: Commit updated time zones
         uses: EndBug/add-and-commit@v9
