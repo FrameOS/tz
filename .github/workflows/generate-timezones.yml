@@ -37,9 +37,18 @@ jobs:
           mv ./tzdata/dstchanges.csv ../dist/dstchanges.csv
           mv ./tzdata/timezones.csv ../dist/timezones.csv
           cd ../dist
+
+          git status
+
+          if git diff --exit-code; then
+            echo "No changes to commit"
+            exit 78
+          fi
+          
           gzip -9 -k tzdata.json
           gzip -9 -k dstchanges.csv
           gzip -9 -k timezones.csv
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > updated.txt
   
       - name: Commit updated time zones
         uses: EndBug/add-and-commit@v9
