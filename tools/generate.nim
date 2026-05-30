@@ -1,7 +1,7 @@
 # This files is copied from https://github.com/treeform/chrono/blob/master/tools/generate.nim
 # Then set to run daily via Github Actions to keep the timezone data up to date
 
-import algorithm, chrono, json, os, osproc, parsecsv, parseopt, strutils
+import algorithm, chrono, json, os, osproc, parsecsv, parseopt, sets, strutils, tables
 
 const doc = """
 
@@ -42,8 +42,20 @@ const timeZoneFiles = @[
   "southamerica",
   # "pacificnew", # some legal thing
   "etcetera",     # UTC, GMT, fixed offsets, and POSIX compatibility zones
-  "backward",     # historical aliases that users may already have configured
+  "factory",      # valid tzdb placeholder kept for existing user selections
   # "backzone"    # pre-1970 detail; do not need it for post-1970 compatibility aliases
+]
+
+const aliasSourceFiles = @[
+  "africa",
+  "antarctica",
+  "asia",
+  "australasia",
+  "europe",
+  "northamerica",
+  "southamerica",
+  "etcetera",
+  "backward"
 ]
 
 proc runCommand(cmd: string) =
@@ -125,6 +137,37 @@ proc dumpToCsvFiles() =
   timezones.close()
   dstChanges.close()
 
+proc dumpAliasFile(timeZoneNames: seq[string]) =
+  let canonicalNames = timeZoneNames.toHashSet()
+  var aliases = initTable[string, string]()
+
+  for fileName in aliasSourceFiles:
+    let path = "tz/" & fileName
+    if not fileExists(path):
+      continue
+    for line in lines(path):
+      let stripped = line.strip()
+      if stripped.len == 0 or stripped.startsWith("#"):
+        continue
+      let parts = stripped.splitWhitespace()
+      if parts.len >= 3 and parts[0] == "Link":
+        let target = parts[1]
+        let alias = parts[2]
+        if target in canonicalNames and alias notin canonicalNames:
+          aliases[alias] = target
+
+  var aliasNames = newSeq[string]()
+  for alias in aliases.keys:
+    aliasNames.add(alias)
+  aliasNames.sort(system.cmp)
+
+  var data = newJObject()
+  for alias in aliasNames:
+    data[alias] = %aliases[alias]
+
+  writeFile("timezone_aliases.json", $data)
+  echo "written file timezone_aliases.json ", aliasNames.len, " aliases"
+
 iterator readCvs*(fileName: string, readHeader = false): CsvRow =
   var p: CsvParser
   p.open(fileName)
@@ -159,6 +202,11 @@ proc csvToJson() =
 
     timeZones.sort do (x, y: TimeZoneWithStr) -> int:
       result = cmp(x.name, y.name)
+
+    var timeZoneNames = newSeq[string]()
+    for timeZone in timeZones:
+      timeZoneNames.add(timeZone.name)
+    dumpAliasFile(timeZoneNames)
 
   block:
     var prevDst = DstChangeWithStr()
