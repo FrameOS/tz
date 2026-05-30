@@ -41,9 +41,9 @@ const timeZoneFiles = @[
   "northamerica",
   "southamerica",
   # "pacificnew", # some legal thing
-    # "etcetera",   # mostly present for historical reasons
-    # "backward",   # historical renames
-    # "backzone"    # historical timezones pre-1970
+  "etcetera",     # UTC, GMT, fixed offsets, and POSIX compatibility zones
+  "backward",     # historical aliases that users may already have configured
+  # "backzone"    # pre-1970 detail; do not need it for post-1970 compatibility aliases
 ]
 
 proc runCommand(cmd: string) =
@@ -73,6 +73,8 @@ proc fetchAndCompileTzDb() =
   if not dirExists("tz/zic") or not dirExists("tz/zdump"):
     runCommand("cd tz; make")
 
+  if dirExists("tz/zic_out"):
+    removeDir("tz/zic_out")
   runCommand("cd tz; zic -d zic_out " & timeZoneFiles.join(" "))
 
 proc dumpToCsvFiles() =
@@ -82,13 +84,7 @@ proc dumpToCsvFiles() =
   let dstChanges = open("tzdata/dstchanges.csv", fmWrite)
 
   var files = newSeq[string]()
-  for file in walkDirRec("tz/zic_out/"):
-
-    if not file[11..^1].contains("/"):
-      # ignore non continental timezones
-      #CET CST6CDT EET EST EST5EDT ...
-      continue
-
+  for file in walkDirRec("tz/zic_out/", {pcFile, pcLinkToFile}):
     files.add(file)
   files.sort(system.cmp)
 
