@@ -34,6 +34,7 @@ jobs:
           fi
           
           mv ./tzdata.json ../dist/tzdata.json
+          mv ./timezone_aliases.json ../dist/timezone_aliases.json
           mv ./tzdata/dstchanges.csv ../dist/dstchanges.csv
           mv ./tzdata/timezones.csv ../dist/timezones.csv
           cd ../dist
@@ -45,9 +46,10 @@ jobs:
             exit 0
           fi
           
-          gzip -9 -k tzdata.json
-          gzip -9 -k dstchanges.csv
-          gzip -9 -k timezones.csv
+          gzip -9 -f -k tzdata.json
+          gzip -9 -f -k timezone_aliases.json
+          gzip -9 -f -k dstchanges.csv
+          gzip -9 -f -k timezones.csv
           date -u +"%Y-%m-%dT%H:%M:%SZ" > updated.txt
   
       - name: Commit updated time zones
