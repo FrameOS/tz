@@ -45,7 +45,8 @@ jobs:
 
           git status
 
-          if git diff --quiet; then
+          # Untracked output (a first dist/zone/) is a change too.
+          if git diff --quiet && [ -z "$(git status --porcelain --untracked-files=all .)" ]; then
             echo "No changes to commit"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
