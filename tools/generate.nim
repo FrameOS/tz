@@ -1,7 +1,7 @@
 # This files is copied from https://github.com/treeform/chrono/blob/master/tools/generate.nim
 # Then set to run daily via Github Actions to keep the timezone data up to date
 
-import algorithm, chrono, json, os, osproc, parsecsv, parseopt, sets, strutils, tables
+import algorithm, chrono, json, os, osproc, parsecsv, parseopt, sets, strutils, tables, times
 
 const doc = """
 
@@ -177,15 +177,76 @@ iterator readCvs*(fileName: string, readHeader = false): CsvRow =
     yield p.row
   p.close()
 
+type TimeZoneWithStr = object
+  id: int
+  name: string
+type DstChangeWithStr = object
+  tzId: int
+  name: string
+  start: float
+  offset: int
+
+# Per-zone slices for devices that cannot hold the whole tzdata.json (the
+# FrameOS ESP32 firmware: frameos/src/lib/tz.nim, embedded/esp32/main/fos_tz.c).
+# One file per zone AND per alias at zone/<Name>.json, the same
+# {timezones, dstChanges} shape with that zone as id 1 and only its
+# transitions from the start of last year through ten years ahead — about
+# 1.5 KB for an EU zone. Served at https://tz.frameos.net/zone/<Name>.json.
+const sliceYearsBack = 1
+const sliceYearsAhead = 10
+
+proc sliceFor(zone: TimeZoneWithStr, sliceName: string, changes: seq[DstChangeWithStr],
+    fromTs, toTs: Timestamp): JsonNode =
+  var kept = newSeq[DstChangeWithStr]()
+  var head = -1
+  for i, change in changes:
+    if change.tzId != zone.id:
+      continue
+    if Timestamp(change.start) <= fromTs:
+      head = i
+    elif Timestamp(change.start) < toTs:
+      if head >= 0:
+        kept.add(changes[head])
+        head = -1
+      kept.add(change)
+  if kept.len == 0 and head >= 0:
+    kept.add(changes[head])
+  var dsts = newJArray()
+  for change in kept:
+    dsts.add(%*{"tzId": 1, "name": change.name, "start": change.start, "offset": change.offset})
+  %*{"timezones": [{"id": 1, "name": sliceName}], "dstChanges": dsts}
+
+proc dumpZoneSlices(timeZones: seq[TimeZoneWithStr], changes: seq[DstChangeWithStr]) =
+  let nowYear = Timestamp(epochTime()).calendar().year
+  let fromTs = Calendar(year: nowYear - sliceYearsBack, month: 1, day: 1).ts
+  let toTs = Calendar(year: nowYear + sliceYearsAhead, month: 1, day: 1).ts
+  var aliases = initTable[string, string]()
+  if fileExists("timezone_aliases.json"):
+    for alias, target in parseJson(readFile("timezone_aliases.json")):
+      if target.kind == JString:
+        aliases[alias] = target.getStr()
+  var byName = initTable[string, TimeZoneWithStr]()
+  for zone in timeZones:
+    byName[zone.name] = zone
+  removeDir("zone")
+  var written = 0
+  var index = newJObject()
+  proc writeSlice(name: string, zone: TimeZoneWithStr) =
+    let path = "zone" / (name & ".json")
+    createDir(path.parentDir)
+    let slice = sliceFor(zone, name, changes, fromTs, toTs)
+    writeFile(path, $slice)
+    index[name] = %zone.name
+    inc written
+  for zone in timeZones:
+    writeSlice(zone.name, zone)
+  for alias, target in aliases:
+    if byName.hasKey(target):
+      writeSlice(alias, byName[target])
+  writeFile("zone" / "index.json", $index)
+  echo "written ", written, " per-zone slices under zone/"
+
 proc csvToJson() =
-  type TimeZoneWithStr = object
-    id: int
-    name: string
-  type DstChangeWithStr = object
-    tzId: int
-    name: string
-    start: float
-    offset: int
 
   var timeZones = newSeq[TimeZoneWithStr]()
   var dstChangesAllowed = newSeq[DstChangeWithStr]()
@@ -257,6 +318,7 @@ proc csvToJson() =
   })
   writeFile("tzdata.json", timeZonesJsonData)
   echo "written file tzdata.json ", timeZonesJsonData.len div 1024, "k"
+  dumpZoneSlices(timeZones, dstChangesAllowed)
 
 when isMainModule:
   var action = "all"

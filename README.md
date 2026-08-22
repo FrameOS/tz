@@ -12,3 +12,4 @@ Also provided:
 
 - https://tz.frameos.net/timezones.csv
 - https://tz.frameos.net/dstchanges.csv
+- https://tz.frameos.net/zone/Europe/Brussels.json - one zone (aliases included, e.g. `zone/Europe/Kiev.json`), same shape as `tzdata.json` with that zone as id 1 and only its transitions from last year through ten years ahead (~1.5 KB). For devices that cannot hold the whole file — the FrameOS ESP32 firmware. `zone/index.json` maps every name to its canonical zone.

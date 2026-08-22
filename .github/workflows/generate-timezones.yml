@@ -39,6 +39,8 @@ jobs:
           mv ./timezone_aliases.json ../dist/timezone_aliases.json
           mv ./tzdata/dstchanges.csv ../dist/dstchanges.csv
           mv ./tzdata/timezones.csv ../dist/timezones.csv
+          rm -rf ../dist/zone
+          mv ./zone ../dist/zone
           cd ../dist
 
           git status
