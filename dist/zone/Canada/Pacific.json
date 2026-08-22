@@ -1,0 +1,1 @@
+{"timezones":[{"id":1,"name":"Canada/Pacific"}],"dstChanges":[{"tzId":1,"name":"PST","start":1730624400.0,"offset":-28800},{"tzId":1,"name":"PDT","start":1741514400.0,"offset":-25200},{"tzId":1,"name":"PST","start":1762074000.0,"offset":-28800},{"tzId":1,"name":"PDT","start":1772964000.0,"offset":-25200},{"tzId":1,"name":"MST","start":1793523600.0,"offset":-25200}]}

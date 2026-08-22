@@ -1,0 +1,1 @@
+{"timezones":[{"id":1,"name":"Canada/Mountain"}],"dstChanges":[{"tzId":1,"name":"MST","start":1730620800.0,"offset":-25200},{"tzId":1,"name":"MDT","start":1741510800.0,"offset":-21600},{"tzId":1,"name":"MST","start":1762070400.0,"offset":-25200},{"tzId":1,"name":"MDT","start":1772960400.0,"offset":-21600},{"tzId":1,"name":"CST","start":1793520000.0,"offset":-21600}]}
