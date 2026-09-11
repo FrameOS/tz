@@ -43,6 +43,8 @@ const timeZoneFiles = @[
   # "pacificnew", # some legal thing
   "etcetera",     # UTC, GMT, fixed offsets, and POSIX compatibility zones
   "factory",      # valid tzdb placeholder kept for existing user selections
+  "backward",     # only for its Zones (PST8PDT, MST7MDT, CST6CDT, EST5EDT since
+                  # eggert/tz c692693); its Links stay aliases, see backwardLinkNames
   # "backzone"    # pre-1970 detail; do not need it for post-1970 compatibility aliases
 ]
 
@@ -89,15 +91,25 @@ proc fetchAndCompileTzDb() =
     removeDir("tz/zic_out")
   runCommand("cd tz; zic -d zic_out " & timeZoneFiles.join(" "))
 
+# zic writes backward's Links into zic_out too; they are published as aliases
+# by dumpAliasFile, not duplicated as full zones.
+proc backwardLinkNames(): HashSet[string] =
+  for line in lines("tz/backward"):
+    let parts = line.strip().splitWhitespace()
+    if parts.len >= 3 and parts[0] == "Link":
+      result.incl(parts[2])
+
 proc dumpToCsvFiles() =
   if not dirExists("tzdata"):
     createDir("tzdata")
   let timezones = open("tzdata/timezones.csv", fmWrite)
   let dstChanges = open("tzdata/dstchanges.csv", fmWrite)
 
+  let backwardLinks = backwardLinkNames()
   var files = newSeq[string]()
   for file in walkDirRec("tz/zic_out/", {pcFile, pcLinkToFile}):
-    files.add(file)
+    if file[11..^1] notin backwardLinks:
+      files.add(file)
   files.sort(system.cmp)
 
   for tzId, file in files:
